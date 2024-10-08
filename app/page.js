@@ -1,101 +1,197 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation'; 
+import FilterSortComponent from '@/components/Filter';
+import Pagination from '@/components/Pagination';
+import ProductCard from '@/components/ProductCard';
+import { fetchProducts } from './API'; 
+import Head from 'next/head';
+import Link from 'next/link'; // Ensure Link is imported
+
+const PAGE_SIZE = 20;
+
+/**
+ * ProductsPage component to display a list of products with filtering, sorting, and pagination.
+ *
+ * @component
+ * @returns {JSX.Element} The rendered ProductsPage component.
+ */
+const ProductsPage = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Deconstructing URL to get query parameters for category, sort, and search
+  const category = searchParams.get('category') || ''; 
+  const sortBy = searchParams.get('sortBy') || 'id'; 
+  const order = searchParams.get('order') || 'asc'; 
+  const search = searchParams.get('search') || ''; 
+
+  const [products, setProducts] = useState([]); 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  /**
+   * Fetches products data based on current filters and pagination.
+   *
+   * @async
+   * @param {number} page - The current page number.
+   * @param {Object} filters - The filters for fetching products.
+   * @param {string} filters.category - The selected category filter.
+   * @param {string} filters.sortBy - The field to sort by.
+   * @param {string} filters.order - The order of sorting ('asc' or 'desc').
+   * @param {string} filters.search - The search term to filter products.
+   */
+  const fetchProductsData = async (page = 1, filters = {}) => {
+    setLoading(true);
+    setError(null); 
+
+    try {
+      const response = await fetchProducts({
+        skip: (page - 1) * PAGE_SIZE,
+        limit: PAGE_SIZE,
+        search,
+        category,
+        sortBy,
+        order
+      });
+
+      console.log("Fetched data:", response); // Log fetched data
+
+      if (Array.isArray(response)) {
+        setProducts(response);
+        setTotalPages(Math.ceil(response.length / PAGE_SIZE));
+      } else {
+        console.error("Expected an array of products but got:", response);
+        setProducts([]);
+      }
+    } catch (err) {
+      console.error("Error fetching products:", err.message);
+      setError(err.message);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const filters = {
+      category: category || undefined,
+      sortBy: sortBy || undefined,
+      order: order || undefined,
+      search: search || undefined,
+    };
+
+    fetchProductsData(currentPage, filters);
+  }, [category, sortBy, order, search, currentPage]);
+
+  /**
+   * Handles page changes for pagination.
+   *
+   * @param {number} page - The page number to navigate to.
+   */
+  const handlePageChange = (page) => {
+    if (page > 0 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  /**
+   * Applies new filters and sorting to the product list.
+   *
+   * @param {Object} newFilters - The new filters to apply.
+   * @param {string} newFilters.category - The selected category filter.
+   * @param {string} newFilters.sortBy - The field to sort by.
+   * @param {string} newFilters.order - The order of sorting ('asc' or 'desc').
+   * @param {string} newFilters.search - The search term to filter products.
+   */
+  const applyFiltersAndSorting = (newFilters) => {
+    setCurrentPage(1); // Reset to first page on filter change
+
+    const { category, sortBy, order, search } = newFilters;
+
+    console.log("Applying new filters and sorting:", newFilters);
+
+    router.push({
+      pathname: '/products',
+      query: {
+        category: category || '',
+        sortBy: sortBy || 'id',
+        order: order || 'asc',
+        search: search || '',
+      },
+    });
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <>
+      <Head>
+        <title>{`Products - Your Store Name`}</title>
+        <meta name="description" content="Explore our wide range of products available at your store." />
+        <meta name="robots" content="index, follow" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      
+      <div className="mx-auto">
+        <FilterSortComponent
+          setProducts={setProducts}
+          setLoading={setLoading}
+          applyFiltersAndSorting={applyFiltersAndSorting}
+          currentCategory={category}
+          currentSort={sortBy}
+          currentOrder={order}
+          currentSearch={search}
         />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+        <div>
+          {loading ? (
+            <p>Loading products...</p>
+          ) : error ? (
+            <p>Error: {error}</p>
+          ) : products.length === 0 ? (
+            <p>No products available</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {Array.isArray(products) && products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+
+              <Pagination 
+                currentPage={currentPage} 
+                totalPages={totalPages} 
+                onPageChange={handlePageChange} 
+              />
+
+              {/* Pagination controls */}
+              <div className="flex justify-center space-x-4 my-10">
+                {currentPage > 1 && (
+                  <button 
+                    onClick={() => handlePageChange(currentPage - 1)} 
+                    className="px-4 py-2 text-blue-500"
+                  >
+                    Previous
+                  </button>
+                )}
+                <span className="text-lg">Page {currentPage} of {totalPages}</span>
+                {currentPage < totalPages && (
+                  <button 
+                    onClick={() => handlePageChange(currentPage + 1)} 
+                    className="px-4 py-2 text-blue-500"
+                  >
+                    Next
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </div>
+    </>
   );
-}
+};
+
+export default ProductsPage;
