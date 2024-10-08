@@ -25,3 +25,130 @@ body {
     text-wrap: balance;
   }
 }
+
+/* styles/globals.css */
+/* .container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.product-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+  background-color: white;
+  border: 1px solid #ddd;
+}
+
+.product-card img {
+  width: 100%;
+  object-fit: cover;
+  height: auto;
+}
+
+.buttons {
+  display: flex;
+  justify-content: space-between;
+} */
+
+
+/* styles for navbar  */
+/* .sticky-navbar {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  background-color: #333;
+  color: white;
+  padding: 10px 0;
+  z-index: 1000;
+}
+
+.sticky-navbar a {
+  color: white;
+  padding: 10px 20px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.sticky-navbar a:hover {
+  background-color: #555;
+}
+
+/* styles for product grid */
+/* .product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.product-card {
+  background-color: #f8f8f8;
+  padding: 20px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+.product-card h2 {
+  font-size: 18px;
+  margin: 10px 0;
+}
+
+.product-card img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* styles for carousel */
+/* .carousel {
+  display: flex;
+  align-items: center;
+}
+
+.carousel-image {
+  width: 300px;
+  height: auto;
+  margin: 0 15px;
+}
+
+button {
+  background-color: #333;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #555;
+} */
+
+/* Pagination styles */
+/* .pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.pagination button {
+  background-color: #333;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  margin: 0 5px;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
+
+.pagination span {
+  font-size: 16px;
+  margin: 0 10px;
+} 
+ */
