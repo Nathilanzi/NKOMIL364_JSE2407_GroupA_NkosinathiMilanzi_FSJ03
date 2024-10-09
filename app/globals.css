@@ -43,11 +43,7 @@ body {
   border: 1px solid #ddd;
 }
 
-.product-card img {
-  width: 100%;
-  object-fit: cover;
-  height: auto;
-}
+
 
 .buttons {
   display: flex;
@@ -96,10 +92,6 @@ body {
   margin: 10px 0;
 }
 
-.product-card img {
-  max-width: 100%;
-  height: auto;
-}
 
 /* styles for carousel */
 /* .carousel {
