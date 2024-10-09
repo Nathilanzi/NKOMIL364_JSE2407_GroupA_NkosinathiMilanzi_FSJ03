@@ -1,72 +1,66 @@
 "use client";
-
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation'; 
-import FilterSortComponent from '@/components/Filter';
-import Pagination from '@/components/Pagination';
-import ProductCard from '@/components/ProductCard';
-import { fetchProducts } from './API'; 
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import FilterSortComponent from '@/app/components/Filter';
+import Pagination from '@/app/components/Pagination';
+import ProductCard from '@/app/components/ProductCard';
 import Head from 'next/head';
-import Link from 'next/link'; // Ensure Link is imported
 
 const PAGE_SIZE = 20;
 
-/**
- * ProductsPage component to display a list of products with filtering, sorting, and pagination.
- *
- * @component
- * @returns {JSX.Element} The rendered ProductsPage component.
- */
 const ProductsPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const category = searchParams.get('category') || '';
+  const sortBy = searchParams.get('sort') || 'id';
+  const order = searchParams.get('order') || 'asc';
+  const search = searchParams.get('search') || '';
 
-  // Deconstructing URL to get query parameters for category, sort, and search
-  const category = searchParams.get('category') || ''; 
-  const sortBy = searchParams.get('sortBy') || 'id'; 
-  const order = searchParams.get('order') || 'asc'; 
-  const search = searchParams.get('search') || ''; 
-
-  const [products, setProducts] = useState([]); 
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  /**
-   * Fetches products data based on current filters and pagination.
-   *
-   * @async
-   * @param {number} page - The current page number.
-   * @param {Object} filters - The filters for fetching products.
-   * @param {string} filters.category - The selected category filter.
-   * @param {string} filters.sortBy - The field to sort by.
-   * @param {string} filters.order - The order of sorting ('asc' or 'desc').
-   * @param {string} filters.search - The search term to filter products.
-   */
   const fetchProductsData = async (page = 1, filters = {}) => {
     setLoading(true);
-    setError(null); 
+    setError(null);
 
     try {
-      const response = await fetchProducts({
-        skip: (page - 1) * PAGE_SIZE,
-        limit: PAGE_SIZE,
+      const { category = '', sortBy = 'id', order = 'asc', search = '' } = filters;
+
+      // Construct query params based on filters and pagination
+      const queryParams = new URLSearchParams({
+        page: page,
+        pageSize: PAGE_SIZE,
         search,
         category,
-        sortBy,
-        order
-      });
+        sort: order // Assuming 'sort' is used in your API
+      }).toString();
 
-      console.log("Fetched data:", response); // Log fetched data
+      const response = await fetch(`/api/products?${queryParams}`);
+      console.log(products)
 
-      if (Array.isArray(response)) {
-        setProducts(response);
-        setTotalPages(Math.ceil(response.length / PAGE_SIZE));
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      console.log("Fetched data:", data);
+
+      if (Array.isArray(data)) {
+        setProducts(data);
       } else {
-        console.error("Expected an array of products but got:", response);
+        console.error("Expected an array of products but got:", data);
         setProducts([]);
       }
+
+      // Fetch total number of products from the count API
+      const countResponse = await fetch(`/api/products/count`);
+      const countData = await countResponse.json();
+      setTotalPages(Math.ceil(countData.count / PAGE_SIZE));
+
     } catch (err) {
       console.error("Error fetching products:", err.message);
       setError(err.message);
@@ -87,38 +81,16 @@ const ProductsPage = () => {
     fetchProductsData(currentPage, filters);
   }, [category, sortBy, order, search, currentPage]);
 
-  /**
-   * Handles page changes for pagination.
-   *
-   * @param {number} page - The page number to navigate to.
-   */
-  const handlePageChange = (page) => {
-    if (page > 0 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
-
-  /**
-   * Applies new filters and sorting to the product list.
-   *
-   * @param {Object} newFilters - The new filters to apply.
-   * @param {string} newFilters.category - The selected category filter.
-   * @param {string} newFilters.sortBy - The field to sort by.
-   * @param {string} newFilters.order - The order of sorting ('asc' or 'desc').
-   * @param {string} newFilters.search - The search term to filter products.
-   */
   const applyFiltersAndSorting = (newFilters) => {
     setCurrentPage(1); // Reset to first page on filter change
 
     const { category, sortBy, order, search } = newFilters;
 
-    console.log("Applying new filters and sorting:", newFilters);
-
     router.push({
       pathname: '/products',
       query: {
         category: category || '',
-        sortBy: sortBy || 'id',
+        sort: sortBy || 'id',
         order: order || 'asc',
         search: search || '',
       },
@@ -136,8 +108,6 @@ const ProductsPage = () => {
       
       <div className="mx-auto">
         <FilterSortComponent
-          setProducts={setProducts}
-          setLoading={setLoading}
           applyFiltersAndSorting={applyFiltersAndSorting}
           currentCategory={category}
           currentSort={sortBy}
@@ -162,30 +132,9 @@ const ProductsPage = () => {
 
               <Pagination 
                 currentPage={currentPage} 
+                setCurrentPage={setCurrentPage} 
                 totalPages={totalPages} 
-                onPageChange={handlePageChange} 
               />
-
-              {/* Pagination controls */}
-              <div className="flex justify-center space-x-4 my-10">
-                {currentPage > 1 && (
-                  <button 
-                    onClick={() => handlePageChange(currentPage - 1)} 
-                    className="px-4 py-2 text-blue-500"
-                  >
-                    Previous
-                  </button>
-                )}
-                <span className="text-lg">Page {currentPage} of {totalPages}</span>
-                {currentPage < totalPages && (
-                  <button 
-                    onClick={() => handlePageChange(currentPage + 1)} 
-                    className="px-4 py-2 text-blue-500"
-                  >
-                    Next
-                  </button>
-                )}
-              </div>
             </>
           )}
         </div>
