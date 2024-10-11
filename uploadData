@@ -41,3 +41,5 @@ async function uploadCategories(categories) {
 
 uploadProducts(products);
 uploadCategories(categories);
+
+

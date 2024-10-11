@@ -1,4 +1,3 @@
-// app/Header.jsx
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -25,7 +24,7 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-gray-900 py-4 sticky top-0 z-50">
+    <header className="bg-red-600 py-4 sticky top-0 z-50"> {/* Changed to red */}
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center text-white">
           <Image 
@@ -42,7 +41,7 @@ export default function Header() {
           &#9776;
         </button>
 
-        <nav className={`md:flex md:items-center md:space-x-4 ${showNavbar ? 'flex flex-col' : 'hidden'} bg-gray-800 p-4 rounded`}>
+        <nav className={`md:flex md:items-center md:space-x-4 ${showNavbar ? 'flex flex-col' : 'hidden'} bg-red-500 p-4 rounded`}> {/* Changed to red */}
           <Link href="/wishlist" className="text-white mb-2 md:mb-0">
             Wishlist
           </Link>
@@ -54,11 +53,11 @@ export default function Header() {
           {user ? (
             <>
               <p className="text-white mb-2 md:mb-0">Welcome, {user.email}</p>
-              <Link href="/signout" className="text-white mb-2 md:mb-0">Sign Out</Link>
+              <Link href="/signOut" className="text-white mb-2 md:mb-0">Sign Out</Link>
             </>
           ) : (
             <>
-              <p className="text-white mb-2 md:mb-0">Welcome, please sign in or sign up</p>
+              <p className="text-white mb-2 md:mb-0"></p>
               <Link href="/signIn" className="text-white mb-2 md:mb-0">Sign In</Link>
               <Link href="/signUp" className="text-white mb-2 md:mb-0">Sign Up</Link>
             </>

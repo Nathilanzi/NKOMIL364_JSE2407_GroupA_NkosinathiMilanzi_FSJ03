@@ -1,68 +1,60 @@
 "use client";
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation'; 
 import FilterSortComponent from '@/app/components/Filter';
 import Pagination from '@/app/components/Pagination';
 import ProductCard from '@/app/components/ProductCard';
+import { fetchProducts } from './API'; 
 import Head from 'next/head';
 
 const PAGE_SIZE = 20;
 
+/**
+ * ProductsPage component to display a list of products with filtering, sorting, and pagination.
+ */
 const ProductsPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const category = searchParams.get('category') || '';
-  const sortBy = searchParams.get('sort') || 'id';
-  const order = searchParams.get('order') || 'asc';
-  const search = searchParams.get('search') || '';
 
-  const [products, setProducts] = useState([]);
+  // Extract query parameters from URL
+  const category = searchParams.get('category') || ''; 
+  const sortBy = searchParams.get('sortBy') || 'id'; 
+  const order = searchParams.get('order') || 'asc'; 
+  const search = searchParams.get('search') || ''; 
+  const page = parseInt(searchParams.get('page')) || 1; // Get current page from search params
+
+  const [products, setProducts] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const fetchProductsData = async (page = 1, filters = {}) => {
+  /**
+   * Fetches products based on the current filters and pagination.
+   */
+  const fetchProductsData = async () => {
     setLoading(true);
-    setError(null);
+    setError(null); 
 
     try {
-      const { category = '', sortBy = 'id', order = 'asc', search = '' } = filters;
-
-      // Construct query params based on filters and pagination
-      const queryParams = new URLSearchParams({
-        page: page,
-        pageSize: PAGE_SIZE,
+      const response = await fetchProducts({
+        skip: (page - 1) * PAGE_SIZE,
+        limit: PAGE_SIZE,
         search,
         category,
-        sort: order // Assuming 'sort' is used in your API
-      }).toString();
+        sortBy,
+        order
+      });
 
-      const response = await fetch(`/api/products?${queryParams}`);
-      console.log(products)
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      console.log("Fetched data:", data);
-
-      if (Array.isArray(data)) {
-        setProducts(data);
+      if (response.products && Array.isArray(response.products)) {
+        setProducts(response.products);
+        // Set total pages based on the total number of products returned by the API
+        setTotalPages(Math.ceil(response.totalCount / PAGE_SIZE)); // Ensure your API returns totalCount
       } else {
-        console.error("Expected an array of products but got:", data);
+        console.error("Expected an array of products but got:", response);
         setProducts([]);
       }
-
-      // Fetch total number of products from the count API
-      const countResponse = await fetch(`/api/products/count`);
-      const countData = await countResponse.json();
-      setTotalPages(Math.ceil(countData.count / PAGE_SIZE));
-
     } catch (err) {
-      console.error("Error fetching products:", err.message);
       setError(err.message);
       setProducts([]);
     } finally {
@@ -70,29 +62,44 @@ const ProductsPage = () => {
     }
   };
 
+  // Fetch products whenever the query params change
   useEffect(() => {
-    const filters = {
-      category: category || undefined,
-      sortBy: sortBy || undefined,
-      order: order || undefined,
-      search: search || undefined,
-    };
+    fetchProductsData();
+  }, [category, sortBy, order, search, page]);
 
-    fetchProductsData(currentPage, filters);
-  }, [category, sortBy, order, search, currentPage]);
+  /**
+   * Handles page changes for pagination.
+   */
+  const handlePageChange = (newPage) => {
+    if (newPage > 0 && newPage <= totalPages) {
+      // Update the URL to reflect the current page
+      router.push({
+        pathname: '/products',
+        query: {
+          category,
+          sortBy,
+          order,
+          search,
+          page: newPage // Add the current page to the query
+        },
+      });
+    }
+  };
 
+  /**
+   * Applies new filters and sorting to the product list.
+   */
   const applyFiltersAndSorting = (newFilters) => {
-    setCurrentPage(1); // Reset to first page on filter change
-
     const { category, sortBy, order, search } = newFilters;
 
     router.push({
       pathname: '/products',
       query: {
         category: category || '',
-        sort: sortBy || 'id',
+        sortBy: sortBy || 'id',
         order: order || 'asc',
         search: search || '',
+        page: 1 // Reset to page 1 on filter change
       },
     });
   };
@@ -103,7 +110,6 @@ const ProductsPage = () => {
         <title>{`Products - Your Store Name`}</title>
         <meta name="description" content="Explore our wide range of products available at your store." />
         <meta name="robots" content="index, follow" />
-        <link rel="icon" href="/favicon.ico" />
       </Head>
       
       <div className="mx-auto">
@@ -125,15 +131,18 @@ const ProductsPage = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {Array.isArray(products) && products.map((product) => (
+                {products.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
 
+              {/* Render pagination */}
               <Pagination 
-                currentPage={currentPage} 
-                setCurrentPage={setCurrentPage} 
+                currentPage={page} 
+                totalItems={totalPages * PAGE_SIZE} // Update total items based on total pages
+                itemsPerPage={PAGE_SIZE} 
                 totalPages={totalPages} 
+                onPageChange={handlePageChange} 
               />
             </>
           )}
